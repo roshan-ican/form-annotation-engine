@@ -1,0 +1,19 @@
+{
+  "name": "instead-form-annotation",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "fill": "node renderer/render.js",
+    "fill:custom": "node renderer/render.js"
+  },
+  "dependencies": {
+    "jsonpath-plus": "^10.3.0",
+    "numeral": "^2.0.6",
+    "pdf-lib": "^1.17.1"
+  },
+  "devDependencies": {},
+  "keywords": ["pdf", "tax", "1040", "irs", "form-filler"],
+  "author": "",
+  "license": "ISC"
+}
+

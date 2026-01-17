@@ -1,0 +1,150 @@
+{
+  "taxpayer": {
+    "name": {
+      "first": "Roshan",
+      "middle": "A",
+      "last": "Ican"
+    },
+    "ssn": "123456789",
+    "dateOfBirth": "1998-04-12",
+    "occupation": "Software Engineer",
+    "address": {
+      "line1": "123 Main Street",
+      "aptNo": "",
+      "city": "San Francisco",
+      "state": "CA",
+      "zip": "94105"
+    },
+    "identityProtectionPin": ""
+  },
+  "spouse": {
+    "name": {
+      "first": "",
+      "middle": "",
+      "last": ""
+    },
+    "ssn": "",
+    "dateOfBirth": "",
+    "occupation": "",
+    "identityProtectionPin": ""
+  },
+  "filingStatus": {
+    "single": true,
+    "marriedJoint": false,
+    "marriedSeparate": false,
+    "headOfHousehold": false,
+    "qualifyingSurvivingSpouse": false
+  },
+  "dependents": [],
+  "digitalAssets": {
+    "hasActivity": true
+  },
+  "income": {
+    "w2": [
+      {
+        "employer": "Acme Corp",
+        "wages": 57890.50,
+        "federalTaxWithheld": 8120.75
+      }
+    ],
+    "householdEmployeeWages": 0,
+    "tipIncome": 0,
+    "medicaidWaiverPayments": 0,
+    "dependentCareBenefits": 0,
+    "adoptionBenefits": 0,
+    "wagesFromForm8919": 0,
+    "otherEarnedIncome": 0,
+    "nontaxableCombatPayElection": 0,
+    "interest": {
+      "taxExempt": 0,
+      "taxable": 320.45
+    },
+    "dividends": {
+      "qualified": 0,
+      "ordinary": 0
+    },
+    "iraDistributions": {
+      "total": 0,
+      "taxable": 0
+    },
+    "pensions": {
+      "total": 0,
+      "taxable": 0
+    },
+    "socialSecurity": {
+      "total": 0,
+      "taxable": 0
+    },
+    "capitalGains": {
+      "gainOrLoss": 0
+    },
+    "other": {
+      "amount": 0
+    },
+    "totalEarnedIncome": 57890.50,
+    "total": 58210.95
+  },
+  "adjustments": {
+    "total": 0
+  },
+  "adjustedGrossIncome": 58210.95,
+  "deductions": {
+    "type": "standard",
+    "standard": {
+      "amount": 15750
+    },
+    "itemized": {
+      "amount": 0
+    },
+    "qualifiedBusinessIncome": 0
+  },
+  "taxableIncome": 42460.95,
+  "tax": {
+    "total": 4866,
+    "alternativeMinimumTax": 0
+  },
+  "credits": {
+    "childTaxCredit": 0,
+    "otherCredits": 0,
+    "total": 0
+  },
+  "otherTaxes": {
+    "total": 0
+  },
+  "payments": {
+    "federalWithholding": {
+      "fromW2": 8120.75,
+      "from1099": 0,
+      "fromOtherForms": 0,
+      "total": 8120.75
+    },
+    "estimatedTaxPayments": 0,
+    "totalPayments": 8120.75
+  },
+  "refund": {
+    "overpaid": 3254.75,
+    "refundAmount": 3254.75,
+    "directDeposit": {
+      "routingNumber": "",
+      "accountNumber": "",
+      "accountType": ""
+    }
+  },
+  "amountOwed": {
+    "total": 0,
+    "estimatedTaxPenalty": 0
+  },
+  "signatures": {
+    "taxpayer": {
+      "occupation": "Software Engineer"
+    }
+  },
+  "presidentialElectionCampaign": {
+    "taxpayer": false,
+    "spouse": false
+  },
+  "homeInUS": {
+    "taxpayer": true,
+    "spouse": false
+  }
+}
