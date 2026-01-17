@@ -1,0 +1,233 @@
+{
+  "form": {
+    "id": "irs-1040",
+    "name": "U.S. Individual Income Tax Return",
+    "year": 2025,
+    "pages": 2,
+    "pageSize": { "width": 612, "height": 792, "unit": "pt" }
+  },
+  "fields": [
+    {
+      "id": "taxpayer_first_name",
+      "label": "Your first name and middle initial",
+      "page": 1,
+      "type": "text",
+      "position": { "x": 36, "y": 684, "width": 215, "height": 14 },
+      "binding": { 
+        "path": "taxpayer.name.first",
+        "transform": "uppercase"
+      },
+      "format": { "fontSize": 10, "align": "left" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].f1_14[0]"
+    },
+    {
+      "id": "taxpayer_last_name",
+      "label": "Last name",
+      "page": 1,
+      "type": "text",
+      "position": { "x": 253, "y": 684, "width": 214, "height": 14 },
+      "binding": { "path": "taxpayer.name.last" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].f1_15[0]"
+    },
+    {
+      "id": "taxpayer_ssn",
+      "label": "Your social security number",
+      "page": 1,
+      "type": "ssn",
+      "position": { "x": 469, "y": 684, "width": 107, "height": 14 },
+      "binding": { "path": "taxpayer.ssn" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].f1_16[0]"
+    },
+    {
+      "id": "address_street",
+      "label": "Home address (number and street)",
+      "page": 1,
+      "type": "text",
+      "position": { "x": 36, "y": 636, "width": 381, "height": 14 },
+      "binding": { "path": "taxpayer.address.line1" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].Address_ReadOrder[0].f1_20[0]"
+    },
+    {
+      "id": "address_apt",
+      "label": "Apt. no.",
+      "page": 1,
+      "type": "text",
+      "position": { "x": 419, "y": 636, "width": 65, "height": 14 },
+      "binding": { "path": "taxpayer.address.aptNo" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].Address_ReadOrder[0].f1_21[0]"
+    },
+    {
+      "id": "address_city",
+      "label": "City, town, or post office",
+      "page": 1,
+      "type": "text",
+      "position": { "x": 36, "y": 612, "width": 294, "height": 14 },
+      "binding": { "path": "taxpayer.address.city" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].Address_ReadOrder[0].f1_22[0]"
+    },
+    {
+      "id": "address_state",
+      "label": "State",
+      "page": 1,
+      "type": "text",
+      "position": { "x": 332, "y": 612, "width": 63, "height": 14 },
+      "binding": { "path": "taxpayer.address.state" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].Address_ReadOrder[0].f1_23[0]"
+    },
+    {
+      "id": "address_zip",
+      "label": "ZIP code",
+      "page": 1,
+      "type": "text",
+      "position": { "x": 397, "y": 612, "width": 70, "height": 14 },
+      "binding": { "path": "taxpayer.address.zip" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].Address_ReadOrder[0].f1_24[0]"
+    },
+    {
+      "id": "filing_status_single",
+      "label": "Filing Status: Single",
+      "page": 1,
+      "type": "checkbox",
+      "position": { "x": 97.6, "y": 578, "width": 8, "height": 8 },
+      "binding": { "path": "filingStatus.single" },
+      "format": { "checkMark": "X" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].Checkbox_ReadOrder[0].c1_8[0]"
+    },
+    {
+      "id": "filing_status_mfj",
+      "label": "Filing Status: Married Filing Jointly",
+      "page": 1,
+      "type": "checkbox",
+      "position": { "x": 97.6, "y": 566, "width": 8, "height": 8 },
+      "binding": { "path": "filingStatus.marriedJoint" },
+      "format": { "checkMark": "X" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].Checkbox_ReadOrder[0].c1_8[1]"
+    },
+    {
+      "id": "filing_status_mfs",
+      "label": "Filing Status: Married Filing Separately",
+      "page": 1,
+      "type": "checkbox",
+      "position": { "x": 97.6, "y": 554, "width": 8, "height": 8 },
+      "binding": { "path": "filingStatus.marriedSeparate" },
+      "format": { "checkMark": "X" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].Checkbox_ReadOrder[0].c1_8[2]"
+    },
+    {
+      "id": "filing_status_hoh",
+      "label": "Filing Status: Head of Household",
+      "page": 1,
+      "type": "checkbox",
+      "position": { "x": 97.6, "y": 542, "width": 8, "height": 8 },
+      "binding": { "path": "filingStatus.headOfHousehold" },
+      "format": { "checkMark": "X" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].c1_8[0]"
+    },
+    {
+      "id": "filing_status_qss",
+      "label": "Filing Status: Qualifying Surviving Spouse",
+      "page": 1,
+      "type": "checkbox",
+      "position": { "x": 97.6, "y": 530, "width": 8, "height": 8 },
+      "binding": { "path": "filingStatus.qualifyingSurvivingSpouse" },
+      "format": { "checkMark": "X" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].c1_8[1]"
+    },
+    {
+      "id": "digital_assets_yes",
+      "label": "Digital Assets: Yes",
+      "page": 1,
+      "type": "checkbox",
+      "position": { "x": 518.4, "y": 497, "width": 8, "height": 8 },
+      "binding": { 
+        "path": "digitalAssets.hasActivity",
+        "condition": "digitalAssets.hasActivity === true"
+      },
+      "nativeFieldId": "topmostSubform[0].Page1[0].c1_10[0]"
+    },
+    {
+      "id": "digital_assets_no",
+      "label": "Digital Assets: No",
+      "page": 1,
+      "type": "checkbox",
+      "position": { "x": 554.4, "y": 497, "width": 8, "height": 8 },
+      "binding": { 
+        "path": "digitalAssets.hasActivity",
+        "condition": "digitalAssets.hasActivity === false"
+      },
+      "nativeFieldId": "topmostSubform[0].Page1[0].c1_10[1]"
+    },
+    {
+      "id": "line_1a",
+      "label": "Line 1a - Total W-2 wages",
+      "page": 1,
+      "type": "currency",
+      "position": { "x": 504, "y": 330, "width": 72, "height": 12 },
+      "binding": { 
+        "path": "income.w2[*].wages",
+        "transform": "sum"
+      },
+      "format": { "align": "right", "decimalPlaces": 2 },
+      "nativeFieldId": "topmostSubform[0].Page1[0].f1_47[0]"
+    },
+    {
+      "id": "line_2b",
+      "label": "Line 2b - Taxable interest",
+      "page": 1,
+      "type": "currency",
+      "position": { "x": 504, "y": 210, "width": 72, "height": 12 },
+      "binding": { "path": "income.interest.taxable" },
+      "format": { "align": "right" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].f1_59[0]"
+    },
+    {
+      "id": "line_9",
+      "label": "Line 9 - Total income",
+      "page": 1,
+      "type": "currency",
+      "position": { "x": 504, "y": 90, "width": 72, "height": 12 },
+      "binding": { "path": "income.total" },
+      "format": { "align": "right" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].f1_70[0]"
+    },
+    {
+      "id": "line_11a",
+      "label": "Line 11a - Adjusted gross income",
+      "page": 1,
+      "type": "currency",
+      "position": { "x": 504, "y": 54, "width": 72, "height": 12 },
+      "binding": { "path": "adjustedGrossIncome" },
+      "format": { "align": "right" },
+      "nativeFieldId": "topmostSubform[0].Page1[0].f1_73[0]"
+    },
+    {
+      "id": "line_25a",
+      "label": "Line 25a - Federal withholding from W-2",
+      "page": 2,
+      "type": "currency",
+      "position": { "x": 410, "y": 504, "width": 72, "height": 12 },
+      "binding": { "path": "payments.federalWithholding.fromW2" },
+      "format": { "align": "right" },
+      "nativeFieldId": "topmostSubform[0].Page2[0].f2_17[0]"
+    },
+    {
+      "id": "line_33",
+      "label": "Line 33 - Total payments",
+      "page": 2,
+      "type": "currency",
+      "position": { "x": 504, "y": 324, "width": 72, "height": 12 },
+      "binding": { "path": "payments.totalPayments" },
+      "format": { "align": "right" },
+      "nativeFieldId": "topmostSubform[0].Page2[0].f2_28[0]"
+    },
+    {
+      "id": "occupation",
+      "label": "Your occupation",
+      "page": 2,
+      "type": "text",
+      "position": { "x": 325, "y": 126, "width": 135, "height": 20 },
+      "binding": { "path": "taxpayer.occupation" },
+      "nativeFieldId": "topmostSubform[0].Page2[0].f2_40[0]"
+    }
+  ]
+}

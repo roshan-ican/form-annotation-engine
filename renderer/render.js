@@ -1,291 +1,355 @@
+/**
+ * Universal Tax Form Renderer
+ * 
+ * Works with ANY tax form as long as you provide an annotation JSON.
+ * Supports both coordinate-based rendering and native PDF field filling.
+ */
+
 const fs = require("fs");
 const path = require("path");
-const { PDFDocument } = require("pdf-lib");
-
-// Load field mapping
-const FIELD_MAPPING = require("../annotations/1040.annotations.json");
-
-/**
- * Format SSN - returns digits only (PDF fields have maxLength=9)
- */
-function formatSSN(ssn) {
-  if (!ssn) return "";
-  return String(ssn).replace(/\D/g, "").slice(0, 9);
-}
-
-/**
- * Format number as currency (no $ symbol)
- */
-function formatCurrency(value) {
-  if (value === null || value === undefined || value === "") return "";
-  const num = parseFloat(value);
-  if (isNaN(num) || num === 0) return "";
-  return num.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
+const { PDFDocument, rgb, StandardFonts } = require("pdf-lib");
 
 /**
  * Get nested value from object using dot notation
+ * Supports array notation: "income.w2[0].wages" or "income.w2[*].wages" (for transform)
  */
-function getNestedValue(obj, path, defaultValue = null) {
-  const keys = path.split(".");
+function getNestedValue(obj, pathStr, defaultValue = null) {
+  if (!pathStr) return defaultValue;
+  
+  // Handle array wildcard [*] - used with transform: "sum"
+  if (pathStr.includes("[*]")) {
+    const [arrayPath, rest] = pathStr.split("[*]");
+    const array = getNestedValue(obj, arrayPath, []);
+    if (!Array.isArray(array)) return defaultValue;
+    
+    const restPath = rest.startsWith(".") ? rest.slice(1) : rest;
+    return array.map(item => restPath ? getNestedValue(item, restPath) : item);
+  }
+  
+  // Handle specific array index [0], [1], etc.
+  const keys = pathStr.replace(/\[(\d+)\]/g, ".$1").split(".");
   let value = obj;
+  
   for (const key of keys) {
     if (value === null || value === undefined) return defaultValue;
     value = value[key];
   }
+  
   return value ?? defaultValue;
 }
 
 /**
- * Transform taxpayer data to form field values
+ * Apply transform to value
  */
-function transformData(data) {
-  const values = {};
-
-  // Personal Info
-  if (data.taxpayer) {
-    const firstName = data.taxpayer.name?.first || "";
-    const middleInitial = data.taxpayer.name?.middle
-      ? ` ${data.taxpayer.name.middle}`
-      : "";
-    values["taxpayer.firstName"] = firstName + middleInitial;
-    values["taxpayer.lastName"] = data.taxpayer.name?.last || "";
-    values["taxpayer.ssn"] = formatSSN(data.taxpayer.ssn);
-    values["signature.occupation"] =
-      data.taxpayer.occupation || data.signatures?.taxpayer?.occupation || "";
+function applyTransform(value, transform) {
+  if (!transform) return value;
+  
+  switch (transform) {
+    case "uppercase":
+      return String(value).toUpperCase();
+    case "lowercase":
+      return String(value).toLowerCase();
+    case "trim":
+      return String(value).trim();
+    case "sum":
+      if (Array.isArray(value)) {
+        return value.reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
+      }
+      return value;
+    case "count":
+      return Array.isArray(value) ? value.length : 0;
+    default:
+      return value;
   }
+}
 
-  // Spouse Info
-  if (data.spouse?.name?.first) {
-    const firstName = data.spouse.name.first;
-    const middleInitial = data.spouse.name?.middle
-      ? ` ${data.spouse.name.middle}`
-      : "";
-    values["spouse.firstName"] = firstName + middleInitial;
-    values["spouse.lastName"] = data.spouse.name?.last || "";
-    values["spouse.ssn"] = formatSSN(data.spouse.ssn);
-  }
-
-  // Address
-  if (data.taxpayer?.address) {
-    values["address.street"] = data.taxpayer.address.line1 || "";
-    values["address.apt"] = data.taxpayer.address.aptNo || "";
-    values["address.city"] = data.taxpayer.address.city || "";
-    values["address.state"] = data.taxpayer.address.state || "";
-    values["address.zip"] = data.taxpayer.address.zip || "";
-  }
-
-  // Income
-  if (data.income) {
-    const w2Wages =
-      data.income.w2?.reduce((sum, w) => sum + (w.wages || 0), 0) || 0;
-    values["income.line1a"] = formatCurrency(w2Wages);
-    values["income.line1b"] = formatCurrency(data.income.householdEmployeeWages);
-    values["income.line1c"] = formatCurrency(data.income.tipIncome);
-    values["income.line1d"] = formatCurrency(data.income.medicaidWaiverPayments);
-    values["income.line1e"] = formatCurrency(data.income.dependentCareBenefits);
-    values["income.line1f"] = formatCurrency(data.income.adoptionBenefits);
-    values["income.line1g"] = formatCurrency(data.income.wagesFromForm8919);
-    values["income.line1h"] = formatCurrency(data.income.otherEarnedIncome);
-    values["income.line1z"] = formatCurrency(data.income.totalEarnedIncome);
-
-    values["income.line2a"] = formatCurrency(data.income.interest?.taxExempt);
-    values["income.line2b"] = formatCurrency(data.income.interest?.taxable);
-    values["income.line3a"] = formatCurrency(data.income.dividends?.qualified);
-    values["income.line3b"] = formatCurrency(data.income.dividends?.ordinary);
-    values["income.line4a"] = formatCurrency(data.income.iraDistributions?.total);
-    values["income.line4b"] = formatCurrency(data.income.iraDistributions?.taxable);
-    values["income.line5a"] = formatCurrency(data.income.pensions?.total);
-    values["income.line5b"] = formatCurrency(data.income.pensions?.taxable);
-    values["income.line6a"] = formatCurrency(data.income.socialSecurity?.total);
-    values["income.line6b"] = formatCurrency(data.income.socialSecurity?.taxable);
-    values["income.line7a"] = formatCurrency(data.income.capitalGains?.gainOrLoss);
-    values["income.line8"] = formatCurrency(data.income.other?.amount);
-    values["income.line9"] = formatCurrency(data.income.total);
-  }
-
-  // Adjustments and AGI
-  values["income.line10"] = formatCurrency(data.adjustments?.total);
-  values["income.line11a"] = formatCurrency(data.adjustedGrossIncome);
-  values["tax.line11b"] = formatCurrency(data.adjustedGrossIncome);
-
-  // Deductions
-  if (data.deductions) {
-    const deduction =
-      data.deductions.type === "standard"
-        ? data.deductions.standard?.amount
-        : data.deductions.itemized?.amount;
-    values["tax.line12e"] = formatCurrency(deduction);
-    values["tax.line13a"] = formatCurrency(data.deductions.qualifiedBusinessIncome);
-    values["tax.line14"] = formatCurrency(deduction);
+/**
+ * Format value based on field type
+ */
+function formatValue(value, field) {
+  if (value === null || value === undefined || value === "") return "";
+  
+  const format = field.format || {};
+  
+  switch (field.type) {
+    case "currency":
+      const num = parseFloat(value);
+      if (isNaN(num)) return "";
+      const decimals = format.decimalPlaces ?? 2;
+      const formatted = num.toLocaleString("en-US", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      });
+      return format.currencySymbol ? `$${formatted}` : formatted;
     
-    // Calculate taxable income
-    const agi = data.adjustedGrossIncome || 0;
-    const totalDeductions = (deduction || 0) + (data.deductions.qualifiedBusinessIncome || 0);
-    values["tax.line15"] = formatCurrency(Math.max(0, agi - totalDeductions));
+    case "number":
+      const n = parseFloat(value);
+      if (isNaN(n)) return "";
+      return n.toLocaleString("en-US", {
+        minimumFractionDigits: format.decimalPlaces ?? 0,
+        maximumFractionDigits: format.decimalPlaces ?? 0,
+      });
+    
+    case "ssn":
+      const digits = String(value).replace(/\D/g, "");
+      if (digits.length === 9) {
+        return `${digits.slice(0,3)}-${digits.slice(3,5)}-${digits.slice(5)}`;
+      }
+      return digits;
+    
+    case "ein":
+      const einDigits = String(value).replace(/\D/g, "");
+      if (einDigits.length === 9) {
+        return `${einDigits.slice(0,2)}-${einDigits.slice(2)}`;
+      }
+      return einDigits;
+    
+    case "date":
+      const dateFormat = format.dateFormat || "MM/DD/YYYY";
+      const date = new Date(value);
+      if (isNaN(date)) return String(value);
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+      const yyyy = date.getFullYear();
+      return dateFormat
+        .replace("MM", mm)
+        .replace("DD", dd)
+        .replace("YYYY", yyyy);
+    
+    case "checkbox":
+      return Boolean(value);
+    
+    default:
+      return String(value);
   }
-
-  // Tax
-  if (data.tax) {
-    values["tax.line16"] = formatCurrency(data.tax.total);
-    values["tax.line18"] = formatCurrency(data.tax.total);
-    values["tax.line22"] = formatCurrency(data.tax.total);
-    values["tax.line24"] = formatCurrency(data.tax.total);
-  }
-
-  // Payments
-  if (data.payments) {
-    values["payments.line25a"] = formatCurrency(data.payments.federalWithholding?.fromW2);
-    values["payments.line25b"] = formatCurrency(data.payments.federalWithholding?.from1099);
-    values["payments.line25c"] = formatCurrency(data.payments.federalWithholding?.fromOtherForms);
-    values["payments.line25d"] = formatCurrency(data.payments.federalWithholding?.total);
-    values["payments.line26"] = formatCurrency(data.payments.estimatedTaxPayments);
-    values["payments.line33"] = formatCurrency(data.payments.totalPayments);
-  }
-
-  // Refund
-  if (data.refund) {
-    values["refund.line34"] = formatCurrency(data.refund.overpaid);
-    values["refund.line35a"] = formatCurrency(data.refund.refundAmount);
-    values["refund.line35b"] = data.refund.directDeposit?.routingNumber || "";
-    values["refund.line35d"] = data.refund.directDeposit?.accountNumber || "";
-    values["refund.line36"] = formatCurrency(data.refund.applyTo2026EstimatedTax);
-  }
-
-  // Amount Owed
-  if (data.amountOwed) {
-    values["owed.line37"] = formatCurrency(data.amountOwed.total);
-    values["owed.line38"] = formatCurrency(data.amountOwed.estimatedTaxPenalty);
-  }
-
-  return values;
 }
 
 /**
- * Get checkbox values based on data
+ * Evaluate condition string
  */
-function getCheckboxValues(data) {
-  const checkboxes = {};
-
-  // Home in US
-  if (data.homeInUS?.taxpayer) {
-    checkboxes["homeInUS"] = true;
+function evaluateCondition(condition, data) {
+  if (!condition) return true;
+  
+  // Simple condition parsing: "path === value" or "path !== value"
+  const match = condition.match(/^(.+?)\s*(===|!==|==|!=)\s*(.+)$/);
+  if (!match) return true;
+  
+  const [, pathStr, operator, expectedStr] = match;
+  const actualValue = getNestedValue(data, pathStr.trim());
+  
+  let expected = expectedStr.trim();
+  if (expected === "true") expected = true;
+  else if (expected === "false") expected = false;
+  else if (expected === "null") expected = null;
+  else if (!isNaN(expected)) expected = parseFloat(expected);
+  
+  switch (operator) {
+    case "===":
+    case "==":
+      return actualValue === expected;
+    case "!==":
+    case "!=":
+      return actualValue !== expected;
+    default:
+      return true;
   }
-
-  // Filing Status (only one can be true)
-  if (data.filingStatus) {
-    if (data.filingStatus.single) checkboxes["filingStatus.single"] = true;
-    else if (data.filingStatus.marriedJoint) checkboxes["filingStatus.marriedJoint"] = true;
-    else if (data.filingStatus.marriedSeparate) checkboxes["filingStatus.marriedSeparate"] = true;
-    else if (data.filingStatus.headOfHousehold) checkboxes["filingStatus.headOfHousehold"] = true;
-    else if (data.filingStatus.qualifyingSurvivingSpouse) checkboxes["filingStatus.qualifyingSurvivingSpouse"] = true;
-  }
-
-  // Digital Assets
-  if (data.digitalAssets?.hasActivity === true) {
-    checkboxes["digitalAssets.yes"] = true;
-  } else if (data.digitalAssets?.hasActivity === false) {
-    checkboxes["digitalAssets.no"] = true;
-  }
-
-  // Presidential Campaign
-  if (data.presidentialElectionCampaign?.taxpayer) {
-    checkboxes["presidentialCampaign.you"] = true;
-  }
-  if (data.presidentialElectionCampaign?.spouse) {
-    checkboxes["presidentialCampaign.spouse"] = true;
-  }
-
-  return checkboxes;
 }
 
 /**
- * Fill the PDF form using native form fields
+ * Fill PDF using coordinate-based annotations
  */
-async function fillForm(pdfPath, dataPath, outputPath) {
-  console.log("Loading PDF:", pdfPath);
-  console.log("Loading data:", dataPath);
-
-  // Load PDF and data
-  const pdfBytes = fs.readFileSync(pdfPath);
-  const data = JSON.parse(fs.readFileSync(dataPath, "utf-8"));
-  const pdfDoc = await PDFDocument.load(pdfBytes);
-
-  // Get the form
-  const form = pdfDoc.getForm();
-
-  // Transform data to field values
-  const fieldValues = transformData(data);
-  const checkboxValues = getCheckboxValues(data);
-
+async function fillWithCoordinates(pdfDoc, annotation, data) {
+  const pages = pdfDoc.getPages();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  
   let filledCount = 0;
-  let errorCount = 0;
-
-  // Fill text fields
-  for (const [dataPath, value] of Object.entries(fieldValues)) {
-    if (!value) continue;
-
-    const fieldId = FIELD_MAPPING.textFields[dataPath];
-    if (!fieldId) {
-      continue; // Skip unmapped fields silently
-    }
-
-    try {
-      const field = form.getTextField(fieldId);
-      field.setText(String(value));
-      filledCount++;
-    } catch (err) {
-      console.warn(`Could not set field ${dataPath} (${fieldId}): ${err.message}`);
-      errorCount++;
-    }
-  }
-
-  // Fill checkboxes
-  for (const [checkboxPath, isChecked] of Object.entries(checkboxValues)) {
-    if (!isChecked) continue;
-
-    const mapping = FIELD_MAPPING.checkboxes[checkboxPath];
-    if (!mapping) {
+  
+  for (const field of annotation.fields) {
+    // Check condition
+    if (!evaluateCondition(field.binding.condition, data)) {
       continue;
     }
-
-    try {
-      const field = form.getField(mapping.fieldId);
-      // For checkboxes in PDF forms, we need to set the value directly
-      if (field.constructor.name === "PDFCheckBox") {
-        field.check();
-      } else {
-        // Radio button or other field type
-        field.select(mapping.checkedValue);
+    
+    // Get value
+    let value = getNestedValue(data, field.binding.path, field.binding.fallback);
+    
+    // Apply transform
+    value = applyTransform(value, field.binding.transform);
+    
+    // Format value
+    const formattedValue = formatValue(value, field);
+    
+    if (formattedValue === "" && field.type !== "checkbox") continue;
+    
+    // Get page (0-indexed internally)
+    const page = pages[field.page - 1];
+    if (!page) {
+      console.warn(`Page ${field.page} not found for field ${field.id}`);
+      continue;
+    }
+    
+    const pos = field.position;
+    const format = field.format || {};
+    const fontSize = format.fontSize || 10;
+    
+    if (field.type === "checkbox") {
+      if (formattedValue === true) {
+        const checkMark = format.checkMark || "X";
+        const centerX = pos.x + pos.width / 2;
+        const centerY = pos.y + pos.height / 2;
+        
+        page.drawText(checkMark, {
+          x: centerX - fontSize / 4,
+          y: centerY - fontSize / 3,
+          size: fontSize,
+          font,
+          color: rgb(0, 0, 0),
+        });
+        filledCount++;
       }
+    } else {
+      // Calculate text position based on alignment
+      let textX = pos.x + 2;
+      const textWidth = font.widthOfTextAtSize(String(formattedValue), fontSize);
+      
+      if (format.align === "right") {
+        textX = pos.x + pos.width - textWidth - 2;
+      } else if (format.align === "center") {
+        textX = pos.x + (pos.width - textWidth) / 2;
+      }
+      
+      page.drawText(String(formattedValue), {
+        x: textX,
+        y: pos.y + (pos.height - fontSize) / 2,
+        size: fontSize,
+        font,
+        color: rgb(0, 0, 0),
+      });
       filledCount++;
-    } catch (err) {
-      console.warn(`Could not set checkbox ${checkboxPath}: ${err.message}`);
-      errorCount++;
     }
   }
-
-  // Save the PDF
-  const outputBytes = await pdfDoc.save();
-  fs.writeFileSync(outputPath, outputBytes);
-
-  console.log(`\n✓ PDF generated: ${outputPath}`);
-  console.log(`  Fields filled: ${filledCount}`);
-  if (errorCount > 0) {
-    console.log(`  Errors: ${errorCount}`);
-  }
+  
+  return filledCount;
 }
 
-// CLI execution
-const args = process.argv.slice(2);
-const pdfPath = args[0] || path.join(__dirname, "../f1040.pdf");
-const dataPath = args[1] || path.join(__dirname, "../data/sample.data.json");
-const outputPath = args[2] || path.join(__dirname, "../filled-1040.pdf");
+/**
+ * Fill PDF using native form fields (when available)
+ */
+async function fillWithNativeFields(pdfDoc, annotation, data) {
+  const form = pdfDoc.getForm();
+  let filledCount = 0;
+  let fallbackCount = 0;
+  
+  for (const field of annotation.fields) {
+    // Check condition
+    if (!evaluateCondition(field.binding.condition, data)) {
+      continue;
+    }
+    
+    // Skip if no native field ID
+    if (!field.nativeFieldId) {
+      fallbackCount++;
+      continue;
+    }
+    
+    // Get value
+    let value = getNestedValue(data, field.binding.path, field.binding.fallback);
+    value = applyTransform(value, field.binding.transform);
+    const formattedValue = formatValue(value, field);
+    
+    if (formattedValue === "" && field.type !== "checkbox") continue;
+    
+    try {
+      if (field.type === "checkbox") {
+        if (formattedValue === true) {
+          const checkbox = form.getCheckBox(field.nativeFieldId);
+          checkbox.check();
+          filledCount++;
+        }
+      } else {
+        const textField = form.getTextField(field.nativeFieldId);
+        // SSN fields often have maxLength, so strip dashes
+        const valueToSet = field.type === "ssn" 
+          ? String(formattedValue).replace(/-/g, "")
+          : String(formattedValue);
+        textField.setText(valueToSet);
+        filledCount++;
+      }
+    } catch (err) {
+      console.warn(`Could not fill native field ${field.nativeFieldId}: ${err.message}`);
+    }
+  }
+  
+  return { filledCount, fallbackCount };
+}
 
-fillForm(pdfPath, dataPath, outputPath).catch((err) => {
-  console.error("Error filling form:", err);
+/**
+ * Main render function
+ */
+async function render(pdfPath, annotationPath, dataPath, outputPath, options = {}) {
+  console.log("Loading PDF:", pdfPath);
+  console.log("Loading annotation:", annotationPath);
+  console.log("Loading data:", dataPath);
+  
+  // Load files
+  const pdfBytes = fs.readFileSync(pdfPath);
+  const annotation = JSON.parse(fs.readFileSync(annotationPath, "utf-8"));
+  const data = JSON.parse(fs.readFileSync(dataPath, "utf-8"));
+  
+  // Load PDF
+  const pdfDoc = await PDFDocument.load(pdfBytes, {
+    ignoreEncryption: true,
+  });
+  
+  // Determine rendering mode
+  const hasNativeFields = annotation.fields.some(f => f.nativeFieldId);
+  const useNative = options.useNativeFields !== false && hasNativeFields;
+  
+  let result;
+  if (useNative) {
+    console.log("Using native PDF fields...");
+    result = await fillWithNativeFields(pdfDoc, annotation, data);
+    
+    // Fallback to coordinates for fields without nativeFieldId
+    if (result.fallbackCount > 0) {
+      console.log(`Falling back to coordinates for ${result.fallbackCount} fields...`);
+      // Filter to only non-native fields and render with coordinates
+      const nonNativeAnnotation = {
+        ...annotation,
+        fields: annotation.fields.filter(f => !f.nativeFieldId)
+      };
+      const coordCount = await fillWithCoordinates(pdfDoc, nonNativeAnnotation, data);
+      result.filledCount += coordCount;
+    }
+  } else {
+    console.log("Using coordinate-based rendering...");
+    result = { filledCount: await fillWithCoordinates(pdfDoc, annotation, data) };
+  }
+  
+  // Save
+  const outputBytes = await pdfDoc.save();
+  fs.writeFileSync(outputPath, outputBytes);
+  
+  console.log(`\n✓ PDF generated: ${outputPath}`);
+  console.log(`  Fields filled: ${result.filledCount}`);
+  
+  return result;
+}
+
+// CLI
+const args = process.argv.slice(2);
+if (args.length < 3) {
+  console.log("Usage: node render.js <pdf> <annotation.json> <data.json> [output.pdf]");
+  console.log("\nExample:");
+  console.log("  node render.js forms/f1040.pdf annotations/1040.json data/taxpayer.json output/filled.pdf");
+  process.exit(1);
+}
+
+const [pdfPath, annotationPath, dataPath, outputPath = "filled.pdf"] = args;
+
+render(pdfPath, annotationPath, dataPath, outputPath).catch(err => {
+  console.error("Error:", err);
   process.exit(1);
 });
+
+module.exports = { render, getNestedValue, formatValue, applyTransform };

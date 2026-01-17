@@ -35,7 +35,20 @@
     "headOfHousehold": false,
     "qualifyingSurvivingSpouse": false
   },
-  "dependents": [],
+  "dependents": [
+    {
+      "firstName": "",
+      "lastName": "",
+      "ssn": "",
+      "relationship": "",
+      "livedWithYou": false,
+      "livedInUS": false,
+      "fullTimeStudent": false,
+      "permanentlyDisabled": false,
+      "childTaxCredit": false,
+      "otherDependentCredit": false
+    }
+  ],
   "digitalAssets": {
     "hasActivity": true
   },
@@ -43,7 +56,7 @@
     "w2": [
       {
         "employer": "Acme Corp",
-        "wages": 57890.50,
+        "wages": 57890.5,
         "federalTaxWithheld": 8120.75
       }
     ],
@@ -61,27 +74,36 @@
     },
     "dividends": {
       "qualified": 0,
-      "ordinary": 0
+      "ordinary": 0,
+      "childDividendsIncluded": false
     },
     "iraDistributions": {
       "total": 0,
-      "taxable": 0
+      "taxable": 0,
+      "isRollover": false,
+      "isQCD": false
     },
     "pensions": {
       "total": 0,
-      "taxable": 0
+      "taxable": 0,
+      "isRollover": false,
+      "isPSO": false
     },
     "socialSecurity": {
       "total": 0,
-      "taxable": 0
+      "taxable": 0,
+      "lumpSumElectionMethod": false,
+      "marriedFilingSeparateLivedApart": false
     },
     "capitalGains": {
-      "gainOrLoss": 0
+      "gainOrLoss": 0,
+      "scheduleDRequired": false,
+      "childCapitalGainsIncluded": false
     },
     "other": {
       "amount": 0
     },
-    "totalEarnedIncome": 57890.50,
+    "totalEarnedIncome": 57890.5,
     "total": 58210.95
   },
   "adjustments": {
@@ -96,19 +118,28 @@
     "itemized": {
       "amount": 0
     },
-    "qualifiedBusinessIncome": 0
+    "qualifiedBusinessIncome": 0,
+    "additional": 0
   },
-  "taxableIncome": 42460.95,
   "tax": {
-    "total": 4866,
+    "total": 0,
+    "fromForm8814": false,
+    "fromForm4972": false,
     "alternativeMinimumTax": 0
   },
   "credits": {
     "childTaxCredit": 0,
+    "creditForOtherDependents": 0,
     "otherCredits": 0,
-    "total": 0
+    "additionalChildTaxCredit": 0,
+    "earnedIncomeCredit": 0,
+    "americanOpportunityCredit": 0,
+    "refundableAdoptionCredit": 0,
+    "doNotClaimEIC": false,
+    "doNotClaimACTC": false
   },
   "otherTaxes": {
+    "selfEmploymentTax": 0,
     "total": 0
   },
   "payments": {
@@ -119,24 +150,56 @@
       "total": 8120.75
     },
     "estimatedTaxPayments": 0,
+    "estimatedTaxFrom2024Return": 0,
+    "estimatedTaxSSN": "",
+    "totalOtherPayments": 0,
     "totalPayments": 8120.75
   },
   "refund": {
-    "overpaid": 3254.75,
-    "refundAmount": 3254.75,
+    "overpaid": 0,
+    "refundAmount": 0,
+    "applyTo2026EstimatedTax": 0,
     "directDeposit": {
       "routingNumber": "",
       "accountNumber": "",
       "accountType": ""
-    }
+    },
+    "form8888Attached": false
   },
   "amountOwed": {
     "total": 0,
     "estimatedTaxPenalty": 0
   },
+  "thirdPartyDesignee": {
+    "allowed": false,
+    "name": "",
+    "phone": "",
+    "pin": ""
+  },
   "signatures": {
     "taxpayer": {
+      "signature": "",
+      "date": "",
       "occupation": "Software Engineer"
+    },
+    "spouse": {
+      "signature": "",
+      "date": "",
+      "occupation": ""
+    },
+    "preparer": {
+      "name": "",
+      "signature": "",
+      "date": "",
+      "ptin": "",
+      "selfEmployed": false,
+      "firm": {
+        "name": "",
+        "address": "",
+        "phone": "",
+        "ein": "",
+        "email": ""
+      }
     }
   },
   "presidentialElectionCampaign": {
@@ -146,5 +209,11 @@
   "homeInUS": {
     "taxpayer": true,
     "spouse": false
+  },
+  "deceased": {
+    "taxpayer": false,
+    "taxpayerDate": "",
+    "spouse": false,
+    "spouseDate": ""
   }
 }

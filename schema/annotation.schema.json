@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "TaxFormAnnotationSpec",
+  "description": "Universal annotation specification for any U.S. tax form",
+  
+  "type": "object",
+  "required": ["form", "fields"],
+  
+  "properties": {
+    "form": {
+      "type": "object",
+      "required": ["id", "name", "year"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique form identifier",
+          "examples": ["irs-1040", "irs-w2", "irs-w8ben", "irs-1099-nec"]
+        },
+        "name": {
+          "type": "string",
+          "description": "Human readable form name"
+        },
+        "year": {
+          "type": "integer",
+          "description": "Tax year"
+        },
+        "revision": {
+          "type": "string",
+          "description": "Form revision date if applicable"
+        },
+        "pages": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Total number of pages"
+        },
+        "pageSize": {
+          "type": "object",
+          "properties": {
+            "width": { "type": "number" },
+            "height": { "type": "number" },
+            "unit": { 
+              "type": "string", 
+              "enum": ["pt", "in", "mm"],
+              "default": "pt"
+            }
+          }
+        }
+      }
+    },
+
+    "fields": {
+      "type": "array",
+      "description": "All annotated fields on the form",
+      "items": { "$ref": "#/$defs/field" }
+    }
+  },
+
+  "$defs": {
+    "field": {
+      "type": "object",
+      "required": ["id", "label", "page", "type", "position", "binding"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique field identifier within this form",
+          "examples": ["taxpayer_first_name", "line_1a", "filing_status_single"]
+        },
+        "label": {
+          "type": "string",
+          "description": "Human readable field label (for documentation/UI)",
+          "examples": ["First Name", "Line 1a - W-2 Wages", "Single"]
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Page number (1-indexed)"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["text", "currency", "number", "ssn", "ein", "date", "checkbox", "radio"],
+          "description": "Field type determines rendering and formatting"
+        },
+        "position": {
+          "$ref": "#/$defs/position"
+        },
+        "binding": {
+          "$ref": "#/$defs/binding"
+        },
+        "format": {
+          "$ref": "#/$defs/format"
+        },
+        "nativeFieldId": {
+          "type": "string",
+          "description": "Optional: PDF native field ID if available (optimization)"
+        }
+      }
+    },
+
+    "position": {
+      "type": "object",
+      "required": ["x", "y", "width", "height"],
+      "description": "Field position on the page (origin: bottom-left for PDF)",
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Distance from left edge"
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Distance from bottom edge"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "unit": {
+          "type": "string",
+          "enum": ["pt", "in", "mm"],
+          "default": "pt"
+        }
+      }
+    },
+
+    "binding": {
+      "type": "object",
+      "required": ["path"],
+      "description": "How to retrieve the value from input data",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "JSONPath or dot-notation path to the value",
+          "examples": [
+            "taxpayer.name.first",
+            "income.w2[0].wages",
+            "filingStatus.single",
+            "dependents[*].firstName"
+          ]
+        },
+        "fallback": {
+          "description": "Default value if path doesn't resolve"
+        },
+        "transform": {
+          "type": "string",
+          "description": "Optional transformation to apply",
+          "enum": ["uppercase", "lowercase", "trim", "sum", "count"],
+          "examples": ["uppercase"]
+        },
+        "condition": {
+          "type": "string",
+          "description": "Optional: Only render if condition is true",
+          "examples": ["filingStatus.single === true"]
+        }
+      }
+    },
+
+    "format": {
+      "type": "object",
+      "description": "Rendering/formatting options",
+      "properties": {
+        "font": {
+          "type": "string",
+          "default": "Helvetica"
+        },
+        "fontSize": {
+          "type": "number",
+          "default": 10
+        },
+        "fontColor": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "default": "#000000"
+        },
+        "align": {
+          "type": "string",
+          "enum": ["left", "center", "right"],
+          "default": "left"
+        },
+        "verticalAlign": {
+          "type": "string",
+          "enum": ["top", "middle", "bottom"],
+          "default": "middle"
+        },
+        "currencySymbol": {
+          "type": "boolean",
+          "default": false,
+          "description": "For currency type: show $ symbol"
+        },
+        "decimalPlaces": {
+          "type": "integer",
+          "default": 2,
+          "description": "For currency/number types"
+        },
+        "dateFormat": {
+          "type": "string",
+          "default": "MM/DD/YYYY",
+          "description": "For date type"
+        },
+        "checkMark": {
+          "type": "string",
+          "enum": ["X", "✓", "●", "filled"],
+          "default": "X",
+          "description": "For checkbox type"
+        },
+        "maxLength": {
+          "type": "integer",
+          "description": "Truncate text if exceeds"
+        },
+        "overflow": {
+          "type": "string",
+          "enum": ["truncate", "shrink", "wrap"],
+          "default": "truncate"
+        }
+      }
+    }
+  }
+}

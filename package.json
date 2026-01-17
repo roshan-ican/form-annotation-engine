@@ -1,19 +1,16 @@
 {
-  "name": "instead-form-annotation",
+  "name": "tax-form-annotation-system",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Universal annotation system for U.S. tax forms",
+  "main": "renderer/render.js",
   "scripts": {
-    "fill": "node renderer/render.js",
-    "fill:custom": "node renderer/render.js"
+    "fill:1040": "node renderer/render.js forms/f1040.pdf annotations/1040.json data/sample-1040.json output/filled-1040.pdf",
+    "fill": "npm run fill:1040"
   },
+  "keywords": ["tax", "pdf", "annotation", "irs", "forms"],
   "dependencies": {
-    "jsonpath-plus": "^10.3.0",
-    "numeral": "^2.0.6",
     "pdf-lib": "^1.17.1"
   },
-  "devDependencies": {},
-  "keywords": ["pdf", "tax", "1040", "irs", "form-filler"],
   "author": "",
   "license": "ISC"
 }
-

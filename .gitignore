@@ -3,7 +3,7 @@ node_modules/
 
 # Generated PDFs
 *.pdf
-!f1040.pdf
+!forms/*.pdf
 
 # Logs
 *.log
@@ -39,3 +39,8 @@ Thumbs.db
 *.tmp
 *.temp
 .cache/
+
+# Output directory (generated filled PDFs)
+output/
+APPROACH_COMPARISON.md
+INTERVIEW_EXPLANATION.md
